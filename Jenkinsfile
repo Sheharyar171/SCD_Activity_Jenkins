@@ -5,18 +5,18 @@
     }
     parameters {
         string(name: 'BRANCH_NAME', defaultValue: 'main', description: 'Branch to build from')
-        string(name: 'STUDENT_NAME', defaultValue: 'Syed Sheharyar Ali') // ← Your name here
+        string(name: 'STUDENT_NAME', defaultValue: 'Syed Sheharyar Ali')
         choice(name: 'ENVIRONMENT', choices: ['dev', 'qa', 'prod'], description: 'Select environment')
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Jest tests after build')
     }
     environment {
-        APP_VERSION = "1.0."
+        APP_VERSION = "1.0.${BUILD_NUMBER}"
         MAINTAINER = "Student"
     }
     stages {
         stage('Checkout') {
             steps {
-                echo "Checking out branch: "
+                echo "Checking out branch: ${params.BRANCH_NAME}"
                 checkout scm
             }
         }
@@ -28,12 +28,11 @@
         }
         stage('Build') {
             steps {
-                echo "Building version  for  environment"
+                echo "Building version ${APP_VERSION} for ${params.ENVIRONMENT} environment"
                 bat '''
                     echo Simulating build process...
                     if not exist build mkdir build
                     copy src\\*.js build
-                    copy *.js build 2>nul || echo "No root JS files to copy"
                     echo Build completed successfully!
                     echo App version: %APP_VERSION% > build\\version.txt
                 '''
@@ -50,13 +49,13 @@
         }
         stage('Package') {
             steps {
-                echo "Creating zip archive for version "
+                echo "Creating zip archive for version ${APP_VERSION}"
                 bat 'powershell Compress-Archive -Path build\\* -DestinationPath build_%APP_VERSION%.zip'
             }
         }
         stage('Deploy (Simulation)') {
             steps {
-                echo "Simulating deployment of version  to "
+                echo "Simulating deployment of version ${APP_VERSION} to ${params.ENVIRONMENT}"
             }
         }
     }
@@ -66,7 +65,7 @@
             deleteDir()
         }
         success {
-            echo "Pipeline succeeded! Version  built and tested."
+            echo "Pipeline succeeded! Version ${APP_VERSION} built and tested."
         }
         failure {
             echo "Pipeline failed! Check console output for details."
